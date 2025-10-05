@@ -7,8 +7,11 @@ export type ExperienceLevel = "Entry" | "Mid" | "Senior";
 export interface ParsedResume {
   text: string;
   wordCount: number;
+  pageCount: number;
   parseWarnings: string[];
-  sourceType: "text" | "pdf" | "docx" | "markdown";
+  source: "text" | "file" | "edited";
+  fileName: string;
+  fileSize: number;
 }
 
 // Job context form data

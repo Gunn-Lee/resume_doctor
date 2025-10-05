@@ -1,4 +1,29 @@
-# Dev Document
+# # High-level take
+
+- **Feasib**Data flow\*\*
+
+1. Us# Bot Protection (reCAPTCHA v3)
+
+- Use **reCAPTCHA v3** for invisible bot detection - no user interaction required.
+- Get site key from Google reCAPTCHA console, verify tokens client-side.
+  -# Final callouts
+
+- **reCAPTCHA v3** provides invisible bot protection without affecting UX - essential for preventing API abuse.
+- Keep the **templates JSON** versioned so you can update verbiage without redeploying code (even store it as a hosted JSON you fetch on load).
+- Consider adding a usage counter/analytics to monitor API usage patterns and detect abuse.egrate with form submission: get score (0.0-1.0), block if score < 0.5.
+- Protects Gemini API quota from automated abuse without UX friction.
+- Add script: `<script src="https://www.google.com/recaptcha/api.js?render=YOUR_SITE_KEY"></script>`lects **Template Type** (Compact/Full) + **Domain** (Universal/Tech/Non-Tech).
+
+2. User provides resume (text or file) → parse text **in a Web Worker**.
+3. User inputs job context + optional fields → validate with zod.
+4. **reCAPTCHA v3** validates user is not a bot (invisible, no user interaction).
+5. Assemble prompt from your **prompt templates JSON** (you already have this) → fill dynamic fields.
+6. Call Gemini with user's key → stream result → show in Result pane.
+7. Enforce **10s cooldown** on submit to reduce accidental repeats.-only**: Local file parsing, **Gemini** calls via the official browser SDK, and **reCAPTCHA v3\*\* bot protection are all doable purely in the client.
+
+- **Security trade-off**: Users will paste their **own Gemini API key**. Treat it as toxic waste—never send it anywhere, never log it, and default to **session-only** storage. Offer an explicit "remember key in Local Storage" toggle (off by default).
+- **Bot protection**: Use **reCAPTCHA v3** for invisible bot detection to prevent API abuse without user friction.
+- **Performance**: PDF/DOCX parsing and long prompts can block the UI—use a **Web Worker** for parsing and prompt assembly.ocument
 
 # High-level take
 
@@ -18,9 +43,9 @@
 - State: **Zustand** (tiny, unopinionated).
 - Routing: React Router (or Next’s app router if you go Next).
 - File parsing:
-    - PDF: **pdfjs-dist** (extract text), optionally **pdf-parse/lib** equivalents for browser.
-    - DOCX: **mammoth** (to text/HTML).
-    - Markdown: **unified + remark-parse**.
+  - PDF: **pdfjs-dist** (extract text), optionally **pdf-parse/lib** equivalents for browser.
+  - DOCX: **mammoth** (to text/HTML).
+  - Markdown: **unified + remark-parse**.
 - AI: **@google/generative-ai** (browser SDK).
 - Workers: **comlink** to simplify worker messaging.
 
@@ -57,15 +82,15 @@
 
 - Accept: raw text, **PDF**, **DOCX**, **MD**.
 - Run parsing in a **Worker**:
-    - Detect MIME → route to correct parser.
-    - Normalize whitespace, collapse hyphenated line breaks (PDF quirk).
-    - Return `{ text, wordCount, parseWarnings }`.
+  - Detect MIME → route to correct parser.
+  - Normalize whitespace, collapse hyphenated line breaks (PDF quirk).
+  - Return `{ text, wordCount, parseWarnings }`.
 - Prompt assembly:
-    - Keep your six templates in a **versioned JSON** object.
-    - Map dropdown:
-        - Analysis depth: `compact|full`
-        - Domain: `universal|technical|nonTechnical`
-    - Fill slots: resume text, title, company, level, geo, special focus, memo.
+  - Keep your six templates in a **versioned JSON** object.
+  - Map dropdown:
+    - Analysis depth: `compact|full`
+    - Domain: `universal|technical|nonTechnical`
+  - Fill slots: resume text, title, company, level, geo, special focus, memo.
 
 ---
 
@@ -82,8 +107,9 @@
 # Privacy & security guardrails
 
 - Never send files or the API key anywhere except **directly to Gemini**.
+- **reCAPTCHA v3**: Only send score verification to Google's servers, no user data.
 - `console.log` scrubbing: guard build to strip logs in production.
-- CSP suggestion (if you host statically): restrict to your domain + Gemini endpoints.
+- CSP suggestion (if you host statically): restrict to your domain + Gemini + reCAPTCHA endpoints.
 - Provide a **Privacy note** modal outlining that analysis runs locally and the key stays in the browser.
 
 ---
@@ -96,17 +122,15 @@
     AppShell.tsx            // layout + toasts + theme
     Router.tsx
   /pages
-    Login.tsx               // Google button (GIS)
     Main.tsx                // Input + Result layout
   /components
-    GoogleSignInButton.tsx
     ResumeDropzone.tsx      // file picker + drag/drop
     ParsedPreview.tsx       // word count, warnings
     PromptConfigForm.tsx    // dropdowns + inputs (react-hook-form)
-    SubmitBar.tsx           // submit + cooldown + API key field
+    SubmitBar.tsx           // submit + cooldown + API key field + reCAPTCHA
     ResultPane.tsx          // streaming viewer + copy + download
   /store
-    useSession.ts           // user, apiKey (session), rememberKey flag
+    useSession.ts           // apiKey (session), rememberKey flag
     useAppState.ts          // parsedResume, form values, job context
   /workers
     parser.worker.ts        // pdf/docx/md → text
@@ -114,6 +138,7 @@
     gemini.ts               // create client, call model, stream helper
     prompts.ts              // your 6 templates JSON
     buildPrompt.ts          // hydrate template with inputs + resume
+    recaptcha.ts            // reCAPTCHA v3 integration
   /utils
     validation.ts           // zod schemas
     cooldown.ts             // submit rate limit helper
@@ -134,10 +159,12 @@ const JobContextSchema = z.object({
   geographicFocus: z.string().optional(),
   specialFocus: z.string().optional(),
   memo: z.string().max(1000).optional(),
-  resumeText: z.string().min(200, "Please provide at least ~200 characters after parsing."),
+  resumeText: z
+    .string()
+    .min(200, "Please provide at least ~200 characters after parsing."),
   geminiApiKey: z.string().regex(/^AI.*/, "Paste a valid Gemini API key"),
+  recaptchaToken: z.string().min(1, "reCAPTCHA verification required"),
 });
-
 ```
 
 ---
@@ -148,8 +175,14 @@ const JobContextSchema = z.object({
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function* streamResumeAnalysis({
-  apiKey, systemPrompt, userPrompt,
-}: { apiKey: string; systemPrompt: string; userPrompt: string }) {
+  apiKey,
+  systemPrompt,
+  userPrompt,
+}: {
+  apiKey: string;
+  systemPrompt: string;
+  userPrompt: string;
+}) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
   const chat = model.startChat({
@@ -161,11 +194,9 @@ export async function* streamResumeAnalysis({
     yield chunk.text();
   }
 }
-
 ```
 
 > Tip: build systemPrompt and userPrompt from your templates; for compact modes you can collapse headings to reduce tokens.
-> 
 
 ---
 
@@ -175,7 +206,7 @@ export async function* streamResumeAnalysis({
 const [cooldown, setCooldown] = useState(0);
 useEffect(() => {
   if (!cooldown) return;
-  const id = setInterval(() => setCooldown(c => (c > 0 ? c - 1 : 0)), 1000);
+  const id = setInterval(() => setCooldown((c) => (c > 0 ? c - 1 : 0)), 1000);
   return () => clearInterval(id);
 }, [cooldown]);
 
@@ -184,7 +215,6 @@ async function onSubmit(values) {
   setCooldown(10);
   // proceed with parse + call
 }
-
 ```
 
 ---
@@ -193,11 +223,11 @@ async function onSubmit(values) {
 
 - **Huge PDFs/DOCX**: show a “Trimming to first N pages / M tokens” notice; offer a toggle to include more (with perf warning).
 - **Over-long resumes (~pages/words)**: enforce a soft limit of **~2 pages ≈ 1,000 words** with a hard stop around **1,200 words**.
-    - **PDF page hint (if available):** try `pdfjs`’s `pdf.numPages > 2 → block or warn`.
-    - **Universal fallback:** after parsing to text, `wordCount = text.trim().split(/\s+/).length`; warn at >1000, reject at >1200.
-    - **UX nicety:** show “~X pages” = `Math.ceil(wordCount / 500)` and offer “Trim to first 1000 words”.
+  - **PDF page hint (if available):** try `pdfjs`’s `pdf.numPages > 2 → block or warn`.
+  - **Universal fallback:** after parsing to text, `wordCount = text.trim().split(/\s+/).length`; warn at >1000, reject at >1200.
+  - **UX nicety:** show “~X pages” = `Math.ceil(wordCount / 500)` and offer “Trim to first 1000 words”.
 - **Oversized files (scans/images)**: reject files **> 1 MB** before parsing to avoid heavy/scanned uploads that won’t parse well anyway.
-    - Quick check: `if (file.size > 1 * 1024 * 1024) { error("Under 1 MB only"); }`
+  - Quick check: `if (file.size > 1 * 1024 * 1024) { error("Under 1 MB only"); }`
 - **Non-English resumes**: detect language (simple heuristic: `franc` or similar) → pass a short instruction to respond in the resume’s language unless user overrides.
 - **Gemini errors**: 401 invalid key, 429 rate limit, 5xx retry with exponential backoff (max 2).
 - **Pasted resumes**: normalize smart quotes, bullets, and line breaks.

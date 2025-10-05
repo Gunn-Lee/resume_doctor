@@ -2,7 +2,11 @@
 
 A fully client-side resume analysis tool powered by Google's Gemini AI. Upload your resume, configure the analysis parameters, and get intelligent feedback—all without sending your data to any server.
 
-## 🌟 Features
+## � Live Demo
+
+**Production**: [https://resume-doctor-liard.vercel.app/](https://resume-doctor-liard.vercel.app/)
+
+## �🌟 Features
 
 - **Client-Only Architecture**: Your resume and API key never leave your browser
 - **Multiple Input Methods**: Upload PDF/DOCX/MD files or paste text directly
@@ -274,8 +278,14 @@ This project is licensed under the MIT License.
 
 Gun Lee - [@Gunn-Lee](https://github.com/Gunn-Lee)
 
-Project Link: [https://github.com/Gunn-Lee/resume_doctor](https://github.com/Gunn-Lee/resume_doctor)
+**Project Links**:
+
+- Live App: [https://resume-doctor-liard.vercel.app/](https://resume-doctor-liard.vercel.app/)
+- GitHub: [https://github.com/Gunn-Lee/resume_doctor](https://github.com/Gunn-Lee/resume_doctor)
+- Documentation: [docs/README.md](./docs/README.md)
 
 ---
 
-**Note**: This is the base layer implementation (v0.1.0). Core features like file parsing and Gemini integration are planned for future releases. See the [Roadmap](#-roadmap) section for details.
+**Status**: v0.1.0 - Production Ready ✅  
+**Deployment**: Live on Vercel  
+**Last Updated**: October 5, 2025

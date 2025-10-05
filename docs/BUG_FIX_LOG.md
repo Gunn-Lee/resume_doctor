@@ -11,6 +11,7 @@ This document tracks all bugs encountered during development and their solutions
 3. [reCAPTCHA Dynamic Script Loading Error](#3-recaptcha-dynamic-script-loading-error)
 4. [Gemini API System Instruction Error](#4-gemini-api-system-instruction-error)
 5. [PDF Worker Not Found in Production Build](#5-pdf-worker-not-found-in-production-build)
+6. [Gemini Streaming Responses Cut Off](#6-gemini-streaming-responses-cut-off)
 
 ---
 
@@ -446,16 +447,111 @@ ls dist/pdf.worker.min.js  # ✅ Should exist
 
 ---
 
+## 6. Gemini Streaming Responses Cut Off
+
+**Date**: October 5, 2025  
+**Severity**: Medium-High  
+**Status**: ✅ Fixed
+
+### Problem
+
+Analysis results sometimes appeared incomplete, cutting off mid-sentence even though the stream seemed to finish normally. No error messages indicated why.
+
+### Root Causes
+
+1. **Insufficient token buffer**: `maxOutputTokens: 4096` was cutting it close for 1000-word responses
+2. **No finish reason checking**: Couldn't tell if response hit MAX_TOKENS, SAFETY filters, or completed normally
+3. **Lack of observability**: No logging to debug stream behavior
+4. **Silent failures**: Stream issues not properly caught or reported
+
+### Solution
+
+**Increased Token Limit:**
+
+```typescript
+maxOutputTokens: 6144, // Increased from 4096
+```
+
+- Still well within free tier (8,192 max)
+- Provides buffer for 1000+ word responses
+
+**Added Finish Reason Checks:**
+
+```typescript
+const finishReason = response.candidates?.[0]?.finishReason;
+
+if (finishReason === "MAX_TOKENS") {
+  console.warn("⚠️ Response hit MAX_TOKENS limit");
+  // Add notice to output
+}
+
+if (finishReason === "SAFETY") {
+  throw new Error("Response blocked by content safety filters...");
+}
+```
+
+**Enhanced Logging:**
+
+```typescript
+console.log("🚀 Starting Gemini stream...");
+console.log(`📦 Chunk ${n}: ${text.length} chars`);
+console.log("✅ Stream complete:", {
+  totalChunks,
+  totalChars,
+  totalWords,
+  finishReason,
+  promptTokens,
+  responseTokens,
+  totalTokens,
+});
+```
+
+### Files Modified
+
+- `src/lib/gemini.ts` - Enhanced streaming with logging and checks
+- `src/hooks/useSubmitAnalysis.ts` - Added progress tracking
+
+### Files Created
+
+- `docs/GEMINI_STREAMING_FIX.md` - Complete debugging guide
+
+### Debugging Steps
+
+Open browser console (F12) and check:
+
+1. Stream start: `🚀 Starting Gemini stream...`
+2. Chunks received: `📦 Chunk 1: 142 chars`
+3. Completion log with finishReason
+4. Token usage statistics
+
+**Good finishReason**: `"STOP"` (normal completion)  
+**Bad finishReason**: `"MAX_TOKENS"` (cut off) or `"SAFETY"` (filtered)
+
+### Verification
+
+- ✅ Console logs provide visibility
+- ✅ Finish reasons checked and reported
+- ✅ Token usage visible in logs
+- ✅ Safety filters throw clear errors
+- ✅ MAX_TOKENS adds notice to output
+
+### Related Documentation
+
+- [GEMINI_STREAMING_FIX.md](./GEMINI_STREAMING_FIX.md)
+
+---
+
 ## Summary Statistics
 
-**Total Bugs Fixed**: 5  
-**All High Severity**: 5/5 ✅
+**Total Bugs Fixed**: 6  
+**High Severity**: 5  
+**Medium-High Severity**: 1
 
 ### Bug Categories
 
 - Form Validation & React Hooks: 2
 - reCAPTCHA Integration: 2
-- Gemini API Integration: 1
+- Gemini API Integration: 2 (system instruction, streaming)
 - Build & Static Assets: 1
 
 ---

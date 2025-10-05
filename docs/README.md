@@ -2,6 +2,8 @@
 
 This folder contains all technical documentation, implementation plans, setup guides, and bug fixes for Resume Doctor.
 
+**Live Production**: [https://resume-doctor-liard.vercel.app/](https://resume-doctor-liard.vercel.app/)
+
 ---
 
 ## 📋 Quick Links
@@ -25,7 +27,8 @@ Contains:
 2. reCAPTCHA Invalid Site Key Error
 3. reCAPTCHA Dynamic Script Loading Error
 4. Gemini API System Instruction Error
-5. PDF Worker Not Found in Production Build ✅ NEW
+5. PDF Worker Not Found in Production Build
+6. Gemini Streaming Responses Cut Off ✅ NEW
 
 ---
 
@@ -63,6 +66,19 @@ Contains:
 ---
 
 ## 🔧 Setup Guides
+
+### Deployment
+
+#### [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+**Production deployment guide for Vercel**
+
+- Live URL: https://resume-doctor-liard.vercel.app/
+- Build configuration and settings
+- Environment variables setup
+- Domain management
+- Troubleshooting common issues
+- Rollback strategy
 
 ### reCAPTCHA Configuration
 

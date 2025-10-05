@@ -78,12 +78,22 @@ export function useSubmitAnalysis() {
       let fullContent = "";
 
       // Step 5: Stream results
+      console.log("🔄 Starting analysis stream...");
+      let chunkCount = 0;
+      const startTime = Date.now();
+
       for await (const chunk of geminiService.streamAnalysis(
         prompt.system,
         prompt.user
       )) {
         if (!chunk.isComplete) {
+          chunkCount++;
           fullContent += chunk.text;
+
+          console.log(
+            `📝 Chunk ${chunkCount}: +${chunk.text.length} chars, total: ${fullContent.length} chars`
+          );
+
           setAnalysisResult({
             content: fullContent,
             timestamp: new Date(),
@@ -91,6 +101,16 @@ export function useSubmitAnalysis() {
           });
         } else {
           // Streaming complete
+          const duration = Date.now() - startTime;
+          const wordCount = fullContent.split(/\s+/).length;
+
+          console.log("✅ Stream completed:", {
+            totalChunks: chunkCount,
+            totalChars: fullContent.length,
+            totalWords: wordCount,
+            duration: `${(duration / 1000).toFixed(2)}s`,
+          });
+
           setAnalysisResult({
             content: fullContent,
             timestamp: new Date(),
@@ -117,10 +137,10 @@ export function useSubmitAnalysis() {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Analysis failed";
+      console.error("❌ Analysis error:", error);
       setSubmitError(errorMessage);
       setIsAnalyzing(false);
       setAnalysisResult(null);
-      console.error("Analysis submission error:", error);
     } finally {
       setIsSubmitting(false);
     }

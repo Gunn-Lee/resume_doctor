@@ -33,18 +33,70 @@ export class GeminiService {
         generationConfig: {
           temperature: 0.2,
           topP: 0.9,
-          maxOutputTokens: 4096,
+          topK: 40,
+          maxOutputTokens: 6144, // Increased from 4096 for longer responses
+          responseMimeType: "text/plain",
         },
       });
+
+      console.log("🚀 Starting Gemini stream...");
 
       // Send message and stream response
       const result = await model.generateContentStream(userPrompt);
 
+      let totalChunks = 0;
+      let totalText = "";
+
       for await (const chunk of result.stream) {
+        totalChunks++;
         const text = chunk.text();
+        totalText += text;
+
+        console.log(`📦 Chunk ${totalChunks}: ${text.length} chars`);
+
         if (text) {
           yield { text, isComplete: false };
         }
+      }
+
+      // Check finish reason and usage
+      const response = await result.response;
+      const finishReason = response.candidates?.[0]?.finishReason;
+      const usageMetadata = response.usageMetadata;
+
+      console.log("✅ Stream complete:", {
+        totalChunks,
+        totalChars: totalText.length,
+        totalWords: totalText.split(/\s+/).length,
+        finishReason,
+        promptTokens: usageMetadata?.promptTokenCount,
+        responseTokens: usageMetadata?.candidatesTokenCount,
+        totalTokens: usageMetadata?.totalTokenCount,
+      });
+
+      // Warn if response was cut off
+      if (finishReason === "MAX_TOKENS") {
+        console.warn(
+          "⚠️ Response hit MAX_TOKENS limit - response may be incomplete"
+        );
+        yield {
+          text: "\n\n*[Note: Response may be incomplete due to length limits. Consider requesting a more compact analysis.]*",
+          isComplete: false,
+        };
+      }
+
+      if (finishReason === "SAFETY") {
+        console.warn("⚠️ Response blocked by safety filters");
+        throw new Error(
+          "Response blocked by content safety filters. Please try rephrasing your resume or job context."
+        );
+      }
+
+      if (finishReason === "RECITATION") {
+        console.warn("⚠️ Response blocked due to recitation");
+        throw new Error(
+          "Response blocked due to content recitation. Please try with different content."
+        );
       }
 
       yield { text: "", isComplete: true };

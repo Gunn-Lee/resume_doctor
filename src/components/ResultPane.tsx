@@ -1,5 +1,7 @@
 import { Copy, Download, ExternalLink, Loader2, FileText } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { AnalysisResult } from "../types";
 
 interface ResultPaneProps {
@@ -12,6 +14,15 @@ interface ResultPaneProps {
  */
 export default function ResultPane({ result, isStreaming }: ResultPaneProps) {
   const [copySuccess, setCopySuccess] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom as content streams
+  useEffect(() => {
+    if (isStreaming && bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [result?.content, isStreaming]);
 
   const handleCopy = async () => {
     if (!result?.content) return;
@@ -28,13 +39,11 @@ export default function ResultPane({ result, isStreaming }: ResultPaneProps) {
   const handleDownload = () => {
     if (!result?.content) return;
 
-    const blob = new Blob([result.content], { type: "text/plain" });
+    const blob = new Blob([result.content], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `resume-analysis-${
-      new Date().toISOString().split("T")[0]
-    }.txt`;
+    a.download = `resume-analysis-${new Date().toISOString().split("T")[0]}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -138,7 +147,10 @@ export default function ResultPane({ result, isStreaming }: ResultPaneProps) {
       </div>
 
       {/* Results Content */}
-      <div className="border rounded-lg p-6 bg-card min-h-[400px] max-h-[800px] overflow-y-auto">
+      <div
+        ref={contentRef}
+        className="border rounded-lg p-6 bg-card min-h-[400px] max-h-[800px] overflow-y-auto"
+      >
         {isStreaming && (
           <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -146,11 +158,14 @@ export default function ResultPane({ result, isStreaming }: ResultPaneProps) {
           </div>
         )}
 
-        <div className="prose prose-sm max-w-none dark:prose-invert">
-          <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
+        <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-pre:bg-muted prose-pre:border">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {result?.content || ""}
-          </pre>
+          </ReactMarkdown>
         </div>
+
+        {/* Auto-scroll anchor */}
+        <div ref={bottomRef} />
 
         {result && !isStreaming && (
           <div className="mt-6 pt-4 border-t text-xs text-muted-foreground">

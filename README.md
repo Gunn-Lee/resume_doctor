@@ -19,6 +19,7 @@ A fully client-side resume analysis tool powered by Google's Gemini AI. Upload y
 - Node.js 18+
 - npm, yarn, or pnpm
 - A Gemini API key ([Get one here](https://ai.google.dev/gemini-api/docs/api-key))
+- A reCAPTCHA v3 site key ([Get one here](https://www.google.com/recaptcha/admin)) - **localhost is supported!**
 
 ### Installation
 
@@ -39,7 +40,22 @@ A fully client-side resume analysis tool powered by Google's Gemini AI. Upload y
    pnpm install
    ```
 
-3. **Start the development server**
+3. **Configure environment variables** _(Optional but recommended)_
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit `.env` and add your reCAPTCHA site key:
+
+   ```bash
+   VITE_RECAPTCHA_SITE_KEY=your_site_key_here
+   ```
+
+   > 📝 **Note**: When setting up reCAPTCHA, add `localhost` to your domains list.  
+   > See [docs/RECAPTCHA_SETUP.md](./docs/RECAPTCHA_SETUP.md) for detailed instructions.
+
+4. **Start the development server**
 
    ```bash
    npm run dev
@@ -49,7 +65,7 @@ A fully client-side resume analysis tool powered by Google's Gemini AI. Upload y
    pnpm dev
    ```
 
-4. **Open your browser**
+5. **Open your browser**
    Navigate to `http://localhost:3000`
 
 ## 📖 Usage

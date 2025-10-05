@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Eye, EyeOff, Key, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Key, Trash2, Shield } from "lucide-react";
 import { useSession } from "../store/useSession";
 import { cn } from "../lib/utils";
+import { getRecaptchaToken } from "../lib/recaptcha";
 
 interface SubmitBarProps {
-  onSubmit: () => void;
+  onSubmit: (recaptchaToken: string) => void;
   cooldownSeconds: number;
   isDisabled: boolean;
 }
@@ -20,10 +21,29 @@ export default function SubmitBar({
   const { apiKey, rememberApiKey, setApiKey, setRememberApiKey, clearApiKey } =
     useSession();
   const [showKey, setShowKey] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [recaptchaError, setRecaptchaError] = useState<string>("");
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (cooldownSeconds > 0 || isDisabled) return;
-    onSubmit();
+
+    setIsVerifying(true);
+    setRecaptchaError("");
+
+    try {
+      // Get reCAPTCHA token
+      const token = await getRecaptchaToken("submit_analysis");
+      onSubmit(token);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "reCAPTCHA verification failed";
+      setRecaptchaError(errorMessage);
+      console.error("reCAPTCHA error:", error);
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const handleClearKey = () => {
@@ -110,26 +130,66 @@ export default function SubmitBar({
       {/* Submit Button */}
       <button
         onClick={handleSubmit}
-        disabled={buttonDisabled}
+        disabled={buttonDisabled || isVerifying}
         className={cn(
-          "w-full py-3 rounded-lg font-medium transition-colors",
-          buttonDisabled
+          "w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2",
+          buttonDisabled || isVerifying
             ? "bg-muted text-muted-foreground cursor-not-allowed"
             : "bg-primary text-primary-foreground hover:bg-primary/90"
         )}
       >
-        {cooldownSeconds > 0
-          ? `Please wait (${cooldownSeconds}s)`
-          : isDisabled
-          ? "Please complete all required fields"
-          : "Analyze Resume"}
+        {isVerifying ? (
+          <>
+            <Shield className="h-4 w-4 animate-pulse" />
+            Verifying...
+          </>
+        ) : cooldownSeconds > 0 ? (
+          `Please wait (${cooldownSeconds}s)`
+        ) : isDisabled ? (
+          "Please complete all required fields"
+        ) : (
+          <>
+            <Shield className="h-4 w-4" />
+            Analyze Resume
+          </>
+        )}
       </button>
+
+      {/* reCAPTCHA Error */}
+      {recaptchaError && (
+        <div className="p-3 bg-destructive/10 border border-destructive rounded-lg">
+          <p className="text-sm text-destructive">{recaptchaError}</p>
+        </div>
+      )}
 
       {cooldownSeconds > 0 && (
         <p className="text-xs text-center text-muted-foreground">
           Cooldown prevents accidental resubmissions
         </p>
       )}
+
+      {/* reCAPTCHA Badge Notice */}
+      <p className="text-xs text-center text-muted-foreground">
+        Protected by reCAPTCHA. By submitting, you agree to Google's{" "}
+        <a
+          href="https://policies.google.com/privacy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:underline"
+        >
+          Privacy Policy
+        </a>{" "}
+        and{" "}
+        <a
+          href="https://policies.google.com/terms"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:underline"
+        >
+          Terms of Service
+        </a>
+        .
+      </p>
     </div>
   );
 }

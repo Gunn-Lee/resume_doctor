@@ -1,40 +1,105 @@
+import { useState } from "react";
 import ResumeDropzone from "../components/ResumeDropzone";
-import ParsedPreview from "../components/ParsedPreview";
 import PromptConfigForm from "../components/PromptConfigForm";
 import SubmitBar from "../components/SubmitBar";
 import ResultPane from "../components/ResultPane";
 import { useAppState } from "../store/useAppState";
+import { useSubmitAnalysis } from "../hooks/useSubmitAnalysis";
+import { parseFile, parseTextInput } from "../lib/parsers";
+import type { ParsedResume, JobContextFormData } from "../types";
 
 /**
  * Main application page with two-column layout
  */
 export default function Main() {
-  const { parsedResume, analysisResult, isAnalyzing, cooldownSeconds } =
-    useAppState();
+  const {
+    parsedResume,
+    analysisResult,
+    isAnalyzing,
+    cooldownSeconds,
+    formData,
+  } = useAppState();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string>("");
 
-  const handleFileSelect = (file: File) => {
-    console.log("File selected:", file.name);
-    // TODO: Parse file in worker (future implementation)
+  const { submitAnalysis, isSubmitting, submitError } = useSubmitAnalysis();
+
+  const handleFileSelect = async (file: File) => {
+    setIsProcessing(true);
+    setError("");
+
+    try {
+      const parseResult = await parseFile(file);
+
+      const parsedResume: ParsedResume = {
+        text: parseResult.text,
+        wordCount: parseResult.wordCount,
+        pageCount: parseResult.pageCount,
+        parseWarnings: parseResult.parseWarnings,
+        source: "file",
+        fileName: file.name,
+        fileSize: file.size,
+      };
+
+      useAppState.getState().setParsedResume(parsedResume);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to parse file";
+      setError(errorMessage);
+      console.error("File parsing error:", err);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleTextInput = (text: string) => {
-    console.log("Text input received:", text.length, "characters");
-    // TODO: Process text (future implementation)
+    setError("");
+
+    try {
+      const parseResult = parseTextInput(text);
+
+      const parsedResume: ParsedResume = {
+        text: parseResult.text,
+        wordCount: parseResult.wordCount,
+        pageCount: parseResult.pageCount,
+        parseWarnings: parseResult.parseWarnings,
+        source: "text",
+        fileName: "Pasted Text",
+        fileSize: new Blob([text]).size,
+      };
+
+      useAppState.getState().setParsedResume(parsedResume);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to process text";
+      setError(errorMessage);
+      console.error("Text processing error:", err);
+    }
   };
 
   const handleClearResume = () => {
     useAppState.getState().setParsedResume(null);
   };
 
-  const handleFormSubmit = () => {
-    console.log("Form submitted");
-    // TODO: Call Gemini API (future implementation)
+  const handleFormSubmit = (data: Partial<JobContextFormData>) => {
+    useAppState.getState().setFormData(data);
   };
 
-  const handleSubmit = () => {
-    console.log("Submit clicked");
-    // TODO: Start analysis (future implementation)
+  const handleSubmit = async (recaptchaToken: string) => {
+    await submitAnalysis(recaptchaToken);
   };
+
+  // Check if form is complete
+  const isFormComplete = Boolean(
+    formData.analysisDepth &&
+      formData.domain &&
+      formData.targetRole &&
+      formData.targetCompany &&
+      formData.experienceLevel
+  );
+
+  const isSubmitDisabled =
+    !parsedResume || !isFormComplete || isAnalyzing || isSubmitting;
 
   return (
     <div className="flex flex-col flex-1">
@@ -55,27 +120,41 @@ export default function Main() {
             <ResumeDropzone
               onFileSelect={handleFileSelect}
               onTextInput={handleTextInput}
+              parsedResume={parsedResume}
+              onClear={handleClearResume}
             />
+
+            {/* Processing indicator */}
+            {isProcessing && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  Processing your resume...
+                </p>
+              </div>
+            )}
+
+            {/* Error message */}
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
           </div>
 
-          {parsedResume && (
-            <div>
-              <h2 className="text-xl font-semibold mb-4">3. Resume Preview</h2>
-              <ParsedPreview
-                parsedResume={parsedResume}
-                onClear={handleClearResume}
-              />
-            </div>
-          )}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">
-              {parsedResume ? "4" : "3"}. Submit
-            </h2>
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold mb-4">3. Submit</h2>
             <SubmitBar
               onSubmit={handleSubmit}
               cooldownSeconds={cooldownSeconds}
-              isDisabled={!parsedResume || isAnalyzing}
+              isDisabled={isSubmitDisabled}
             />
+
+            {/* Submit error message */}
+            {submitError && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">{submitError}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

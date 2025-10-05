@@ -83,7 +83,6 @@ export async function getRecaptchaToken(
   if (!SITE_KEY) {
     throw new Error("reCAPTCHA not configured");
   }
-  console.log("site key:", SITE_KEY);
 
   // Ensure reCAPTCHA is initialized before using it
   await initRecaptcha();

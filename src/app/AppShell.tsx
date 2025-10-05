@@ -10,9 +10,9 @@ interface AppShellProps {
  */
 export default function AppShell({ children }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
       {/* Header */}
-      <header className="border-b">
+      <header className="border-b fixed top-0 bg-background/75 z-10 w-full">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -32,7 +32,7 @@ export default function AppShell({ children }: AppShellProps) {
       </header>
 
       {/* Main content */}
-      <main className="container mx-auto px-4 py-8">{children}</main>
+      <main className="container mt-16 mx-auto px-4 pb-4">{children}</main>
 
       {/* Footer */}
       <footer className="border-t mt-auto">

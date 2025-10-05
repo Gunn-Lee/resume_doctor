@@ -8,6 +8,7 @@ interface SubmitBarProps {
   onSubmit: (recaptchaToken: string) => void;
   cooldownSeconds: number;
   isDisabled: boolean;
+  isAnalyzing: boolean;
 }
 
 /**
@@ -17,6 +18,7 @@ export default function SubmitBar({
   onSubmit,
   cooldownSeconds,
   isDisabled,
+  isAnalyzing,
 }: SubmitBarProps) {
   const { apiKey, rememberApiKey, setApiKey, setRememberApiKey, clearApiKey } =
     useSession();
@@ -54,7 +56,7 @@ export default function SubmitBar({
   const buttonDisabled = isDisabled || cooldownSeconds > 0 || !apiKey;
 
   return (
-    <div className="space-y-4 border rounded-lg p-6 bg-card">
+    <div className="space-y-4 border rounded-lg px-6 py-3 bg-card">
       {/* API Key Input */}
       <div>
         <label htmlFor="apiKey" className="block text-sm font-medium mb-2">
@@ -143,6 +145,8 @@ export default function SubmitBar({
             <Shield className="h-4 w-4 animate-pulse" />
             Verifying...
           </>
+        ) : isAnalyzing ? (
+          "Please wait"
         ) : cooldownSeconds > 0 ? (
           `Please wait (${cooldownSeconds}s)`
         ) : isDisabled ? (

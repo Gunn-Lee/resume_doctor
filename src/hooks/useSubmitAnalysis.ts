@@ -64,6 +64,8 @@ export function useSubmitAnalysis() {
         memo: formData.memo,
       });
 
+      console.log("System Prompt:", prompt.system);
+
       // Step 3: Initialize Gemini service
       const geminiService = new GeminiService(apiKey);
 

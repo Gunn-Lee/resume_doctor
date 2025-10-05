@@ -10,18 +10,9 @@ export interface StreamChunk {
 
 export class GeminiService {
   private client: GoogleGenerativeAI;
-  private model: any;
 
   constructor(apiKey: string) {
     this.client = new GoogleGenerativeAI(apiKey);
-    this.model = this.client.getGenerativeModel({
-      model: "gemini-1.5-pro",
-      generationConfig: {
-        temperature: 0.2,
-        topP: 0.9,
-        maxOutputTokens: 4096,
-      },
-    });
   }
 
   /**
@@ -35,11 +26,19 @@ export class GeminiService {
     userPrompt: string
   ): AsyncGenerator<StreamChunk> {
     try {
-      const chat = this.model.startChat({
+      // Create model with system instruction
+      const model = this.client.getGenerativeModel({
+        model: "gemini-2.5-pro",
         systemInstruction: systemPrompt,
+        generationConfig: {
+          temperature: 0.2,
+          topP: 0.9,
+          maxOutputTokens: 4096,
+        },
       });
 
-      const result = await chat.sendMessageStream(userPrompt);
+      // Send message and stream response
+      const result = await model.generateContentStream(userPrompt);
 
       for await (const chunk of result.stream) {
         const text = chunk.text();

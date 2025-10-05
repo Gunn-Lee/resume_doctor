@@ -13,6 +13,31 @@ declare global {
 }
 
 /**
+ * Inject reCAPTCHA script dynamically with site key from env
+ */
+function injectRecaptchaScript(): void {
+  if (!SITE_KEY) {
+    console.error("reCAPTCHA site key not configured in environment");
+    return;
+  }
+
+  // Check if script already exists
+  const existingScript = document.querySelector(
+    'script[src*="recaptcha/api.js"]'
+  );
+  if (existingScript) {
+    return; // Script already injected
+  }
+
+  // Create and inject script element
+  const script = document.createElement("script");
+  script.src = `https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`;
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
+}
+
+/**
  * Initialize reCAPTCHA by waiting for the script to load
  * @returns Promise that resolves when reCAPTCHA is ready
  */
@@ -22,6 +47,9 @@ export function initRecaptcha(): Promise<void> {
       reject(new Error("reCAPTCHA site key not configured"));
       return;
     }
+
+    // Inject the script if not already present
+    injectRecaptchaScript();
 
     if (typeof window.grecaptcha !== "undefined") {
       resolve();
@@ -55,6 +83,10 @@ export async function getRecaptchaToken(
   if (!SITE_KEY) {
     throw new Error("reCAPTCHA not configured");
   }
+  console.log("site key:", SITE_KEY);
+
+  // Ensure reCAPTCHA is initialized before using it
+  await initRecaptcha();
 
   return new Promise((resolve, reject) => {
     window.grecaptcha.ready(async () => {
@@ -62,6 +94,7 @@ export async function getRecaptchaToken(
         const token = await window.grecaptcha.execute(SITE_KEY, { action });
         resolve(token);
       } catch (error) {
+        console.error("reCAPTCHA error:", error);
         reject(new Error("reCAPTCHA verification failed"));
       }
     });

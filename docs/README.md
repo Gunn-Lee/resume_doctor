@@ -1,0 +1,218 @@
+# Documentation Index
+
+This folder contains all technical documentation, implementation plans, setup guides, and bug fixes for Resume Doctor.
+
+---
+
+## 📋 Quick Links
+
+- **[Bug Fix Log](./BUG_FIX_LOG.md)** - Complete log of all bugs encountered and fixed
+- **[Implementation Plans](#implementation-plans)** - Detailed phase-by-phase implementation guides
+- **[Setup Guides](#setup-guides)** - Configuration and deployment instructions
+- **[Error Fixes](#error-fixes)** - Specific error resolutions with examples
+
+---
+
+## 🐛 Bug Fix Log
+
+**[BUG_FIX_LOG.md](./BUG_FIX_LOG.md)** - Master log of all bugs and fixes
+
+Contains:
+
+1. Submit Button Validation Issues (infinite loop fix)
+2. reCAPTCHA Invalid Site Key Error
+3. reCAPTCHA Dynamic Script Loading Error
+4. Gemini API System Instruction Error
+
+---
+
+## 📝 Implementation Plans
+
+### [Implementation Plan - Analysis Flow.md](./Implementation%20Plan%20-%20Analysis%20Flow.md)
+
+**Phases A-G**: Complete integration of Gemini API streaming analysis
+
+- Phase A: Create useSubmitAnalysis Hook ✅
+- Phase B: Enhance ResultPane Component ✅
+- Phase C: Verify Cooldown System ✅
+- Phase D: Integrate in Main.tsx ✅
+- Phase E: Create Validation Schemas ✅
+- Phase F: Add Error Boundary ✅
+- Phase G: Comprehensive Testing ⏳
+
+### [Implementation Plan - Core Functions.md](./Implementation%20Plan%20-%20Core%20Functions.md)
+
+**Original plan**: Core functions implementation
+
+- File parsing (PDF, DOCX, MD)
+- Component structure
+- Prompt template system
+- Basic API integration
+
+### [Implementation Plan - Base Layer.md](./Implementation%20Plan%20-%20Base%20Layer.md)
+
+**Foundation**: Project setup and base architecture
+
+- Type definitions
+- State management with Zustand
+- Basic component structure
+
+---
+
+## 🔧 Setup Guides
+
+### reCAPTCHA Configuration
+
+#### [RECAPTCHA_SETUP.md](./RECAPTCHA_SETUP.md)
+
+Complete setup guide for Google reCAPTCHA v3
+
+- How to create a site key in GCP Console
+- Domain configuration (localhost + production)
+- Testing and verification steps
+
+#### [RECAPTCHA_CHECKLIST.md](./RECAPTCHA_CHECKLIST.md)
+
+Quick verification checklist
+
+- Verify GCP settings
+- Domain whitelist confirmation
+- Troubleshooting steps
+
+### Environment Variables
+
+#### [RECAPTCHA_ENV_VAR.md](./RECAPTCHA_ENV_VAR.md)
+
+Best practices for using environment variables
+
+- Why use env vars instead of hardcoding
+- How to configure for different environments
+- Dynamic script injection implementation
+
+---
+
+## 🔨 Error Fixes
+
+### [GEMINI_SYSTEM_INSTRUCTION_FIX.md](./GEMINI_SYSTEM_INSTRUCTION_FIX.md)
+
+**Fixed**: Gemini API 400 error with system_instruction
+
+- Problem: Passing systemInstruction to wrong API method
+- Solution: Use getGenerativeModel() with systemInstruction parameter
+- Severity: Critical
+
+### [RECAPTCHA_ERROR_FIX.md](./RECAPTCHA_ERROR_FIX.md)
+
+**Fixed**: "Invalid site key or not loaded in api.js"
+
+- Problem: Using render=explicit instead of render=SITE_KEY
+- Solution: Update script URL with correct render parameter
+- Severity: High
+
+### [SUBMIT_BUTTON_FIX.md](./SUBMIT_BUTTON_FIX.md)
+
+**Fixed**: Submit button stays disabled + infinite loop
+
+- Problem: Form not updating state on change
+- Solution: Use watch() with useEffect for real-time updates
+- Severity: High/Critical
+
+---
+
+## 📊 Project Status
+
+### Completed Phases
+
+- ✅ Phase A-F: Core implementation complete
+- ✅ All critical bugs fixed
+- ✅ Comprehensive documentation created
+
+### In Progress
+
+- ⏳ Phase G: Comprehensive testing
+
+### Upcoming
+
+- Performance optimization
+- Additional validation
+- Enhanced error handling
+- Production deployment
+
+---
+
+## 🎯 For Developers
+
+### Getting Started
+
+1. Read [Implementation Plan - Base Layer.md](./Implementation%20Plan%20-%20Base%20Layer.md)
+2. Follow [RECAPTCHA_SETUP.md](./RECAPTCHA_SETUP.md) for API configuration
+3. Review [BUG_FIX_LOG.md](./BUG_FIX_LOG.md) to avoid known issues
+
+### Debugging
+
+1. Check [BUG_FIX_LOG.md](./BUG_FIX_LOG.md) for similar issues
+2. Review specific error fix docs for detailed solutions
+3. Use console logging patterns documented in bug fixes
+
+### Contributing
+
+When fixing bugs:
+
+1. Document the issue in [BUG_FIX_LOG.md](./BUG_FIX_LOG.md)
+2. Create detailed fix document if needed
+3. Update this index with new documentation
+
+---
+
+## 📁 File Organization
+
+```
+docs/
+├── README.md                                    # This file
+├── BUG_FIX_LOG.md                              # Master bug log
+├── Implementation Plan - Base Layer.md          # Foundation plan
+├── Implementation Plan - Core Functions.md      # Core features plan
+├── Implementation Plan - Analysis Flow.md       # Integration plan
+├── RECAPTCHA_SETUP.md                          # Setup guide
+├── RECAPTCHA_CHECKLIST.md                      # Quick checklist
+├── RECAPTCHA_ENV_VAR.md                        # Env var best practices
+├── RECAPTCHA_ERROR_FIX.md                      # Specific fix
+├── GEMINI_SYSTEM_INSTRUCTION_FIX.md            # Specific fix
+├── SUBMIT_BUTTON_FIX.md                        # Specific fix
+├── Dev Document.md                             # Original dev notes
+├── Privacy Policy Terms.md                     # Privacy policy
+└── prompts/                                    # Prompt templates
+    ├── JSON.md
+    ├── Non-Technical (Compact).md
+    ├── Non-Technical (Full Analysis).md
+    ├── Technical (Compact).md
+    ├── Technical (Full Analysis).md
+    ├── Universal (Compact).md
+    └── Universal (Full Analysis).md
+```
+
+---
+
+## 🔍 Search Tips
+
+- **Bug fixes**: Check [BUG_FIX_LOG.md](./BUG_FIX_LOG.md) first
+- **Setup issues**: See RECAPTCHA\_\*.md files
+- **API errors**: Check GEMINI\_\*.md files
+- **Implementation details**: See Implementation Plan files
+- **Prompt templates**: See prompts/ folder
+
+---
+
+## 📞 Support
+
+If you encounter an issue:
+
+1. Search [BUG_FIX_LOG.md](./BUG_FIX_LOG.md) for similar problems
+2. Check relevant setup guides
+3. Review error fix documents
+4. Document new issues in the bug log
+
+---
+
+**Last Updated**: October 5, 2025  
+**Documentation Status**: Complete through Phase F

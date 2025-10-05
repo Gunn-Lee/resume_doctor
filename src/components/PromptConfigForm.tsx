@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import {
   JobContextSchema,
   type JobContextFormValues,
@@ -23,6 +24,7 @@ export default function PromptConfigForm({
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<JobContextFormValues>({
     resolver: zodResolver(JobContextSchema),
@@ -34,6 +36,20 @@ export default function PromptConfigForm({
       ...defaultValues,
     },
   });
+
+  // Watch all form values and update state on change
+  const watchedValues = watch();
+
+  useEffect(() => {
+    // Only update the store when form values actually change
+    // Don't call onSubmit here to avoid infinite loops
+    const currentFormData = useAppState.getState().formData;
+
+    // Only update if values have actually changed
+    if (JSON.stringify(currentFormData) !== JSON.stringify(watchedValues)) {
+      useAppState.getState().setFormData(watchedValues);
+    }
+  }, [watchedValues]);
 
   const onFormSubmit = (data: JobContextFormValues) => {
     useAppState.getState().setFormData(data);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import ResumeDropzone from "../components/ResumeDropzone";
 import PromptConfigForm from "../components/PromptConfigForm";
 import SubmitBar from "../components/SubmitBar";
@@ -81,9 +81,11 @@ export default function Main() {
     useAppState.getState().setParsedResume(null);
   };
 
-  const handleFormSubmit = (data: Partial<JobContextFormData>) => {
-    useAppState.getState().setFormData(data);
-  };
+  const handleFormSubmit = useCallback((data: Partial<JobContextFormData>) => {
+    // This callback is now stable and won't cause re-renders
+    // The form will update the store directly via useEffect
+    console.log("Form submitted (callback triggered):", data);
+  }, []);
 
   const handleSubmit = async (recaptchaToken: string) => {
     await submitAnalysis(recaptchaToken);
@@ -101,9 +103,28 @@ export default function Main() {
   const isSubmitDisabled =
     !parsedResume || !isFormComplete || isAnalyzing || isSubmitting;
 
+  // Debug logging
+  useEffect(() => {
+    console.log("Form validation state:", {
+      parsedResume: !!parsedResume,
+      formData,
+      isFormComplete,
+      isAnalyzing,
+      isSubmitting,
+      isSubmitDisabled,
+    });
+  }, [
+    parsedResume,
+    formData,
+    isFormComplete,
+    isAnalyzing,
+    isSubmitting,
+    isSubmitDisabled,
+  ]);
+
   return (
     <div className="flex flex-col flex-1">
-      <div className="grid grid-cols-2 gap-8 h-[100vh]">
+      <div className="grid grid-grid-cols-1 lg:grid-cols-2 gap-8 h-full lg:h-[100vh]">
         <div>
           <div>
             <h2 className="text-xl font-semibold mb-4">
@@ -141,12 +162,13 @@ export default function Main() {
             )}
           </div>
 
-          <div className="mt-8">
+          <div className="mt-4">
             <h2 className="text-xl font-semibold mb-4">3. Submit</h2>
             <SubmitBar
               onSubmit={handleSubmit}
               cooldownSeconds={cooldownSeconds}
               isDisabled={isSubmitDisabled}
+              isAnalyzing={isAnalyzing}
             />
 
             {/* Submit error message */}
@@ -159,7 +181,7 @@ export default function Main() {
         </div>
       </div>
 
-      <div className="w-full h-[88vh]">
+      <div className="flex flex-col w-full h-[82vh] mt-8">
         <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
         <ResultPane result={analysisResult} isStreaming={isAnalyzing} />
       </div>

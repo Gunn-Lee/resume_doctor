@@ -171,12 +171,12 @@ export default function ResumeDropzone({
       </div>
 
       {/* Content */}
-      <div className="p-6">
+      <div className="px-6 py-3">
         {activeTab === "upload" ? (
-          <div className="h-[300px]">
+          <div className="flex flex-col h-[300px]">
             {parsedResume && parsedResume.source === "file" ? (
               /* Show uploaded file info */
-              <div className="border-2 border-primary rounded-lg p-6 bg-primary/5">
+              <div className="flex flex-col flex-1 border-2 border-primary rounded-lg p-6 bg-primary/5">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
@@ -214,6 +214,9 @@ export default function ResumeDropzone({
                   </div>
                 )}
 
+                {/* Spacer to push button to bottom */}
+                <div className="flex-1"></div>
+
                 {/* Replace file button */}
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -239,7 +242,7 @@ export default function ResumeDropzone({
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                   className={cn(
-                    "border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer",
+                    "flex-1 border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer flex flex-col items-center justify-center",
                     isDragging
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/50"
@@ -297,18 +300,6 @@ export default function ResumeDropzone({
               <span className="text-xs text-muted-foreground">
                 {parsedResume ? "Text can be edited" : "Minimum 200 characters"}
               </span>
-              {/* <button
-                onClick={handleTextSubmit}
-                disabled={textValue.length === 0}
-                className={cn(
-                  "px-6 py-2 rounded-lg font-medium transition-colors",
-                  textValue.length > 0
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "bg-muted text-muted-foreground cursor-not-allowed"
-                )}
-              >
-                {parsedResume ? "Update Text" : "Use This Text"}
-              </button> */}
             </div>
           </div>
         )}

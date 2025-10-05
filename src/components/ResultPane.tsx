@@ -89,7 +89,7 @@ export default function ResultPane({ result, isStreaming }: ResultPaneProps) {
   // Empty state
   if (!result && !isStreaming) {
     return (
-      <div className="border-2 border-dashed rounded-lg p-12 text-center">
+      <div className="border-2 border-dashed rounded-lg p-12 text-center lg:h-[600px] flex flex-col items-center justify-center">
         <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-medium mb-2">No Results Yet</h3>
         <p className="text-sm text-muted-foreground">
@@ -103,7 +103,7 @@ export default function ResultPane({ result, isStreaming }: ResultPaneProps) {
   // Streaming state
   if (isStreaming && !result) {
     return (
-      <div className="border rounded-lg p-8">
+      <div className="border rounded-lg p-8 lg:h-[600px]">
         <div className="flex items-center justify-center gap-3">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
           <p className="text-lg font-medium">Analyzing your resume...</p>
@@ -117,7 +117,7 @@ export default function ResultPane({ result, isStreaming }: ResultPaneProps) {
 
   // Results display
   return (
-    <div className="space-y-4">
+    <div className="h-full space-y-4">
       {/* Action Bar */}
       <div className="flex gap-2 justify-end">
         <button
@@ -149,7 +149,7 @@ export default function ResultPane({ result, isStreaming }: ResultPaneProps) {
       {/* Results Content */}
       <div
         ref={contentRef}
-        className="border rounded-lg p-6 bg-card min-h-[400px] max-h-[800px] overflow-y-auto"
+        className="border rounded-lg p-6 bg-card lg:h-[600px] overflow-y-auto"
       >
         {isStreaming && (
           <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">

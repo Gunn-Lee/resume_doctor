@@ -10,6 +10,7 @@ This document tracks all bugs encountered during development and their solutions
 2. [reCAPTCHA Invalid Site Key Error](#2-recaptcha-invalid-site-key-error)
 3. [reCAPTCHA Dynamic Script Loading Error](#3-recaptcha-dynamic-script-loading-error)
 4. [Gemini API System Instruction Error](#4-gemini-api-system-instruction-error)
+5. [PDF Worker Not Found in Production Build](#5-pdf-worker-not-found-in-production-build)
 
 ---
 
@@ -186,6 +187,7 @@ The script injection was happening asynchronously, but `getRecaptchaToken()` was
    - Script now uses site key from `.env` file
 
 2. **Fixed timing issue** by ensuring initialization before use:
+
    ```typescript
    export async function getRecaptchaToken(
      action: string = "submit"
@@ -377,6 +379,84 @@ console.log("Form validation state:", {
 - ✅ Wait for dependencies before use (`await initRecaptcha()`)
 - ✅ Check for undefined before accessing properties
 - ✅ Add timeouts for external scripts
+
+---
+
+## 5. PDF Worker Not Found in Production Build
+
+**Date**: October 5, 2025  
+**Severity**: High  
+**Status**: ✅ Fixed
+
+### Problem
+
+When running the production build with `npm start`, PDF file uploads failed with:
+
+```
+Failed to parse PDF: Setting up fake worker failed: "Failed to fetch dynamically imported module: http://localhost:4173/pdf.worker.min.js"
+```
+
+Works in development, breaks in production.
+
+### Root Cause
+
+PDF.js requires a separate worker file (`pdf.worker.min.js`) to parse PDFs. The worker file wasn't being copied to the `dist/` folder during build, causing a 404 error in production.
+
+### Solution
+
+**Step 1: Create public folder**
+
+```bash
+mkdir -p public
+cp pdf.worker.min.js public/
+```
+
+Vite automatically copies `public/` contents to `dist/` during build.
+
+**Step 2: Verify**
+
+```bash
+npm run build
+ls dist/pdf.worker.min.js  # ✅ Should exist
+```
+
+### Files Modified
+
+- Created `public/` folder with `pdf.worker.min.js`
+- `docs/PDF_WORKER_FIX.md` - Detailed documentation
+
+### Technical Details
+
+**Vite public folder behavior:**
+
+- Files in `public/` copied as-is to `dist/` root
+- Not processed by Vite bundler
+- Referenced with absolute paths (`/pdf.worker.min.js`)
+
+### Verification
+
+1. ✅ Build completed successfully
+2. ✅ Worker file in `dist/pdf.worker.min.js`
+3. ✅ PDF uploads work in production preview
+4. ✅ No console errors
+
+### Related Documentation
+
+- [PDF_WORKER_FIX.md](./PDF_WORKER_FIX.md)
+
+---
+
+## Summary Statistics
+
+**Total Bugs Fixed**: 5  
+**All High Severity**: 5/5 ✅
+
+### Bug Categories
+
+- Form Validation & React Hooks: 2
+- reCAPTCHA Integration: 2
+- Gemini API Integration: 1
+- Build & Static Assets: 1
 
 ---
 

@@ -1,7 +1,7 @@
 import * as pdfjs from "pdfjs-dist";
 
 // Configure worker path for client-side processing
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
 
 export interface ParseResult {
   text: string;

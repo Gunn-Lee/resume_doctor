@@ -25,6 +25,7 @@ Contains:
 2. reCAPTCHA Invalid Site Key Error
 3. reCAPTCHA Dynamic Script Loading Error
 4. Gemini API System Instruction Error
+5. PDF Worker Not Found in Production Build ✅ NEW
 
 ---
 
@@ -119,6 +120,14 @@ Best practices for using environment variables
 - Solution: Use watch() with useEffect for real-time updates
 - Severity: High/Critical
 
+### [PDF_WORKER_FIX.md](./PDF_WORKER_FIX.md) ✅ NEW
+
+**Fixed**: PDF worker not found in production build
+
+- Problem: pdf.worker.min.js not copied to dist/ folder
+- Solution: Move worker to public/ folder (auto-copied by Vite)
+- Severity: High
+
 ---
 
 ## 📊 Project Status
@@ -189,7 +198,7 @@ When fixing bugs:
 
 ### Component Test Guide
 
-📁 **[../src/components/**tests**/README.md](../src/components/__tests__/README.md)**
+📁 **[../src/components/**tests**/README.md](../src/components/**tests**/README.md)**
 
 - How to write new tests
 - Testing best practices

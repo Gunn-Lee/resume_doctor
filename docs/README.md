@@ -7,9 +7,11 @@ This folder contains all technical documentation, implementation plans, setup gu
 ## 📋 Quick Links
 
 - **[Bug Fix Log](./BUG_FIX_LOG.md)** - Complete log of all bugs encountered and fixed
+- **[Unit Test Setup](./UNIT_TEST_SETUP.md)** - Testing infrastructure and PromptConfigForm tests ✅
 - **[Implementation Plans](#implementation-plans)** - Detailed phase-by-phase implementation guides
 - **[Setup Guides](#setup-guides)** - Configuration and deployment instructions
 - **[Error Fixes](#error-fixes)** - Specific error resolutions with examples
+- **[Testing Documentation](#testing-documentation)** - Unit tests and testing guides
 
 ---
 
@@ -164,24 +166,58 @@ When fixing bugs:
 
 ---
 
-## 📁 File Organization
+## 🧪 Testing Documentation
+
+### [UNIT_TEST_SETUP.md](./UNIT_TEST_SETUP.md)
+
+**Complete testing infrastructure** with Vitest + React Testing Library
+
+- Testing framework setup (Vitest, RTL, jsdom)
+- Test script configuration
+- 26 comprehensive tests for PromptConfigForm ✅
+- Best practices and patterns
+- Next components to test
+
+### [PROMPT_CONFIG_FORM_TESTS.md](./PROMPT_CONFIG_FORM_TESTS.md)
+
+**Detailed test documentation** for PromptConfigForm
+
+- 26 tests organized by category
+- Test coverage breakdown
+- Testing patterns and strategies
+- Maintenance guidelines
+
+### Component Test Guide
+
+📁 **[../src/components/**tests**/README.md](../src/components/__tests__/README.md)**
+
+- How to write new tests
+- Testing best practices
+- Common issues and solutions
+- Available testing tools
+
+---
+
+## 📂 File Organization
 
 ```
 docs/
-├── README.md                                    # This file
-├── BUG_FIX_LOG.md                              # Master bug log
-├── Implementation Plan - Base Layer.md          # Foundation plan
-├── Implementation Plan - Core Functions.md      # Core features plan
-├── Implementation Plan - Analysis Flow.md       # Integration plan
-├── RECAPTCHA_SETUP.md                          # Setup guide
-├── RECAPTCHA_CHECKLIST.md                      # Quick checklist
-├── RECAPTCHA_ENV_VAR.md                        # Env var best practices
-├── RECAPTCHA_ERROR_FIX.md                      # Specific fix
-├── GEMINI_SYSTEM_INSTRUCTION_FIX.md            # Specific fix
-├── SUBMIT_BUTTON_FIX.md                        # Specific fix
-├── Dev Document.md                             # Original dev notes
-├── Privacy Policy Terms.md                     # Privacy policy
-└── prompts/                                    # Prompt templates
+├── README.md                                   # This file (navigation index)
+├── BUG_FIX_LOG.md                             # Complete bug fix log
+├── UNIT_TEST_SETUP.md                         # Testing setup & results ✅
+├── PROMPT_CONFIG_FORM_TESTS.md                # Test documentation ✅
+├── Implementation Plan - Base Layer.md         # Foundation plan
+├── Implementation Plan - Core Functions.md     # Core features plan
+├── Implementation Plan - Analysis Flow.md      # Integration plan
+├── RECAPTCHA_SETUP.md                         # Setup guide
+├── RECAPTCHA_CHECKLIST.md                     # Quick checklist
+├── RECAPTCHA_ENV_VAR.md                       # Env var best practices
+├── RECAPTCHA_ERROR_FIX.md                     # Specific fix
+├── GEMINI_SYSTEM_INSTRUCTION_FIX.md           # Specific fix
+├── SUBMIT_BUTTON_FIX.md                       # Specific fix
+├── Dev Document.md                            # Original dev notes
+├── Privacy Policy Terms.md                    # Privacy policy
+└── prompts/                                   # Prompt templates
     ├── JSON.md
     ├── Non-Technical (Compact).md
     ├── Non-Technical (Full Analysis).md
@@ -192,6 +228,31 @@ docs/
 ```
 
 ---
+
+## 🔍 Search Tips
+
+- **Bug fixes**: Check [BUG_FIX_LOG.md](./BUG_FIX_LOG.md) first
+- **Testing**: See [UNIT_TEST_SETUP.md](./UNIT_TEST_SETUP.md) and [PROMPT_CONFIG_FORM_TESTS.md](./PROMPT_CONFIG_FORM_TESTS.md)
+- **Setup issues**: See RECAPTCHA\_\*.md files
+- **API errors**: Check GEMINI\_\*.md files
+- **Implementation details**: See Implementation Plan files
+- **Prompt templates**: See prompts/ folder
+
+---
+
+## 📞 Support
+
+If you encounter an issue:
+
+1. Search [BUG_FIX_LOG.md](./BUG_FIX_LOG.md) for similar problems
+2. Check relevant setup guides
+3. Review error fix documents
+4. Document new issues in the bug log
+
+---
+
+**Last Updated**: October 5, 2025  
+**Documentation Status**: Complete through Phase F + Unit Tests ✅
 
 ## 🔍 Search Tips
 

@@ -11,7 +11,6 @@ import type { ParsedResume } from "../types";
 
 interface ResumeDropzoneProps {
   onFileSelect: (file: File) => void;
-  onTextInput: (text: string) => void;
   parsedResume: ParsedResume | null;
   onClear: () => void;
 }
@@ -26,7 +25,6 @@ const MAX_FILE_SIZE = 1024 * 1024; // 1MB
  */
 export default function ResumeDropzone({
   onFileSelect,
-  onTextInput,
   parsedResume,
   onClear,
 }: ResumeDropzoneProps) {
@@ -117,21 +115,6 @@ export default function ResumeDropzone({
     if (file) {
       handleFile(file);
     }
-  };
-
-  const handleTextSubmit = () => {
-    if (textValue.trim().length === 0) {
-      setError("Please enter some text");
-      return;
-    }
-
-    if (textValue.length < 200) {
-      setError("Resume text must be at least 200 characters");
-      return;
-    }
-
-    setError("");
-    onTextInput(textValue);
   };
 
   return (

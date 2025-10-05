@@ -5,7 +5,7 @@ import SubmitBar from "../components/SubmitBar";
 import ResultPane from "../components/ResultPane";
 import { useAppState } from "../store/useAppState";
 import { useSubmitAnalysis } from "../hooks/useSubmitAnalysis";
-import { parseFile, parseTextInput } from "../lib/parsers";
+import { parseFile } from "../lib/parsers";
 import type { ParsedResume, JobContextFormData } from "../types";
 
 /**
@@ -49,31 +49,6 @@ export default function Main() {
       console.error("File parsing error:", err);
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const handleTextInput = (text: string) => {
-    setError("");
-
-    try {
-      const parseResult = parseTextInput(text);
-
-      const parsedResume: ParsedResume = {
-        text: parseResult.text,
-        wordCount: parseResult.wordCount,
-        pageCount: parseResult.pageCount,
-        parseWarnings: parseResult.parseWarnings,
-        source: "text",
-        fileName: "Pasted Text",
-        fileSize: new Blob([text]).size,
-      };
-
-      useAppState.getState().setParsedResume(parsedResume);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to process text";
-      setError(errorMessage);
-      console.error("Text processing error:", err);
     }
   };
 
@@ -140,7 +115,6 @@ export default function Main() {
             </h2>
             <ResumeDropzone
               onFileSelect={handleFileSelect}
-              onTextInput={handleTextInput}
               parsedResume={parsedResume}
               onClear={handleClearResume}
             />

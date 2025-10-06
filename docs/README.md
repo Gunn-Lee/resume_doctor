@@ -9,7 +9,7 @@ This folder contains all technical documentation, implementation plans, setup gu
 ## 📋 Quick Links
 
 - **[Bug Fix Log](./BUG_FIX_LOG.md)** - Complete log of all bugs encountered and fixed
-- **[Unit Test Setup](./UNIT_TEST_SETUP.md)** - Testing infrastructure and PromptConfigForm tests ✅
+- **[Unit Test Setup](./UNIT_TEST_SETUP.md)** - Testing infrastructure and comprehensive test suite (139 tests) ✅
 - **[Implementation Plans](#implementation-plans)** - Detailed phase-by-phase implementation guides
 - **[Setup Guides](#setup-guides)** - Configuration and deployment instructions
 - **[Error Fixes](#error-fixes)** - Specific error resolutions with examples
@@ -199,9 +199,14 @@ When fixing bugs:
 
 - Testing framework setup (Vitest, RTL, jsdom)
 - Test script configuration
-- 26 comprehensive tests for PromptConfigForm ✅
+- **139 comprehensive tests across 5 components** ✅
+  - ErrorBoundary (28 tests)
+  - PromptConfigForm (26 tests)
+  - ResultPane (27 tests)
+  - ResumeDropzone (28 tests)
+  - SubmitBar (30 tests)
 - Best practices and patterns
-- Next components to test
+- Testing lessons learned
 
 ### [PROMPT_CONFIG_FORM_TESTS.md](./PROMPT_CONFIG_FORM_TESTS.md)
 

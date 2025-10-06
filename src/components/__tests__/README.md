@@ -6,8 +6,14 @@ This directory contains unit tests for all React components.
 
 ```
 __tests__/
+├── ErrorBoundary.test.tsx     ✅ 28 tests
 ├── PromptConfigForm.test.tsx  ✅ 26 tests
+├── ResultPane.test.tsx        ✅ 27 tests
+├── ResumeDropzone.test.tsx    ✅ 28 tests
+├── SubmitBar.test.tsx         ✅ 30 tests
 └── README.md                   📖 This file
+
+Total: 139 tests, all passing
 ```
 
 ## Running Tests
@@ -34,6 +40,22 @@ npm test -- -t "should render"
 
 ## Test Files
 
+### ErrorBoundary.test.tsx
+
+**Status**: ✅ All 28 tests passing  
+**Coverage**: Comprehensive
+
+Tests cover:
+
+- Normal operation without errors
+- Error catching and display
+- Error UI elements (message, stack trace)
+- Development vs production modes
+- Reset and reload functionality
+- Error isolation between components
+- Accessibility features
+- Edge cases (multiple errors, children errors)
+
 ### PromptConfigForm.test.tsx
 
 **Status**: ✅ All 26 tests passing  
@@ -49,6 +71,60 @@ Tests cover:
 - Accessibility features
 - Edge cases and error handling
 - Select option correctness
+
+### ResultPane.test.tsx
+
+**Status**: ✅ All 27 tests passing  
+**Coverage**: Comprehensive
+
+Tests cover:
+
+- Empty state display
+- Streaming state indicators
+- Markdown rendering with code blocks
+- Action buttons (copy, download, open)
+- Copy to clipboard functionality
+- Download as text file
+- Open in new tab
+- Accessibility features
+- Integration scenarios
+
+### ResumeDropzone.test.tsx
+
+**Status**: ✅ All 28 tests passing  
+**Coverage**: Comprehensive
+
+Tests cover:
+
+- File upload via input
+- Drag and drop functionality
+- File type validation
+- File size validation
+- PDF preview display
+- Text preview display
+- File removal
+- Text input mode
+- Keyboard accessibility
+- Error handling
+- Integration scenarios
+
+### SubmitBar.test.tsx
+
+**Status**: ✅ All 30 tests passing  
+**Coverage**: Comprehensive
+
+Tests cover:
+
+- API key input and display
+- Remember API key checkbox
+- Button states (disabled, cooldown)
+- Cooldown system (30s timer)
+- reCAPTCHA integration
+- Form submission
+- Accessibility features
+- Error states
+- Integration scenarios
+- Edge cases
 
 ## Writing New Tests
 
@@ -115,6 +191,7 @@ describe("YourComponent", () => {
    ```
 
 5. **Arrange-Act-Assert Pattern**: Keep tests organized
+
    ```typescript
    it("should do something", async () => {
      // Arrange: Setup

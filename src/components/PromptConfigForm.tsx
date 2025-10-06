@@ -1,14 +1,19 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
 import {
   JobContextSchema,
   type JobContextFormValues,
 } from "../utils/validation";
 import { useAppState } from "../store/useAppState";
 
+/**
+ * Props for the PromptConfigForm component
+ */
 interface PromptConfigFormProps {
+  /** Callback when the form is submitted with valid data */
   onSubmit: (data: JobContextFormValues) => void;
+  /** Default values to pre-populate the form fields */
   defaultValues?: Partial<JobContextFormValues>;
 }
 
@@ -212,25 +217,6 @@ export default function PromptConfigForm({
           </p>
         )}
       </div>
-
-      {/* Memo (Optional)
-      <div>
-        <label htmlFor="memo" className="block text-sm font-medium mb-2">
-          Additional Notes{" "}
-          <span className="text-muted-foreground">(optional)</span>
-        </label>
-        <textarea
-          id="memo"
-          {...register("memo")}
-          placeholder="Any other context or requirements..."
-          rows={3}
-          maxLength={1000}
-          className="w-full px-3 py-2 border rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-        {errors.memo && (
-          <p className="mt-1 text-sm text-destructive">{errors.memo.message}</p>
-        )}
-      </div> */}
     </form>
   );
 }

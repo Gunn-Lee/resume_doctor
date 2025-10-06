@@ -1,12 +1,22 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 
+/**
+ * Props for the ErrorBoundary component
+ */
 interface Props {
+  /** Child components to render and protect with error boundary */
   children: ReactNode;
 }
 
+/**
+ * State for the ErrorBoundary component
+ */
 interface State {
+  /** Whether an error has been caught */
   hasError: boolean;
+  /** The caught error object, if any */
   error: Error | null;
+  /** Additional error information from React, if any */
   errorInfo: ErrorInfo | null;
 }
 
@@ -68,7 +78,11 @@ class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-          <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8">
+          <div
+            className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8"
+            role="alert"
+            aria-live="assertive"
+          >
             {/* Error Icon */}
             <div className="flex justify-center mb-6">
               <div className="rounded-full bg-red-100 p-4">

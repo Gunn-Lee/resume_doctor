@@ -4,10 +4,17 @@ import { useSession } from "../store/useSession";
 import { cn } from "../lib/utils";
 import { getRecaptchaToken } from "../lib/recaptcha";
 
+/**
+ * Props for the SubmitBar component
+ */
 interface SubmitBarProps {
+  /** Callback when the form is submitted with a valid reCAPTCHA token */
   onSubmit: (recaptchaToken: string) => void;
+  /** Seconds remaining in cooldown period (0 = no cooldown) */
   cooldownSeconds: number;
+  /** Whether the submit button should be disabled */
   isDisabled: boolean;
+  /** Whether analysis is currently in progress */
   isAnalyzing: boolean;
 }
 

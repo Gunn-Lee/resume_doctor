@@ -1,11 +1,19 @@
-import { Copy, Download, ExternalLink, Loader2, FileText } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { Copy, Download, ExternalLink, Loader2, FileText } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { AnalysisResult } from "../types";
 
+/** Duration in milliseconds to show "Copied!" message */
+const COPY_SUCCESS_DURATION = 2000;
+
+/**
+ * Props for the ResultPane component
+ */
 interface ResultPaneProps {
+  /** The analysis result to display, or null if no results yet */
   result: AnalysisResult | null;
+  /** Whether results are currently streaming in */
   isStreaming: boolean;
 }
 
@@ -30,7 +38,7 @@ export default function ResultPane({ result, isStreaming }: ResultPaneProps) {
     try {
       await navigator.clipboard.writeText(result.content);
       setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
+      setTimeout(() => setCopySuccess(false), COPY_SUCCESS_DURATION);
     } catch (error) {
       console.error("Failed to copy:", error);
     }
@@ -89,7 +97,11 @@ export default function ResultPane({ result, isStreaming }: ResultPaneProps) {
   // Empty state
   if (!result && !isStreaming) {
     return (
-      <div className="border-2 border-dashed rounded-lg p-12 text-center lg:h-[600px] flex flex-col items-center justify-center">
+      <div
+        className="border-2 border-dashed rounded-lg p-12 text-center lg:h-[600px] flex flex-col items-center justify-center"
+        role="status"
+        aria-label="No analysis results yet"
+      >
         <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-medium mb-2">No Results Yet</h3>
         <p className="text-sm text-muted-foreground">
@@ -103,7 +115,12 @@ export default function ResultPane({ result, isStreaming }: ResultPaneProps) {
   // Streaming state
   if (isStreaming && !result) {
     return (
-      <div className="border rounded-lg p-8 lg:h-[600px]">
+      <div
+        className="border rounded-lg p-8 lg:h-[600px]"
+        role="status"
+        aria-live="polite"
+        aria-label="Analyzing resume"
+      >
         <div className="flex items-center justify-center gap-3">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
           <p className="text-lg font-medium">Analyzing your resume...</p>
@@ -119,7 +136,11 @@ export default function ResultPane({ result, isStreaming }: ResultPaneProps) {
   return (
     <div className="h-full space-y-4">
       {/* Action Bar */}
-      <div className="flex gap-2 justify-end">
+      <div
+        className="flex gap-2 justify-end"
+        role="toolbar"
+        aria-label="Analysis result actions"
+      >
         <button
           onClick={handleCopy}
           className="px-3 py-2 border rounded-lg hover:bg-muted transition-colors flex items-center gap-2 text-sm"
@@ -150,6 +171,8 @@ export default function ResultPane({ result, isStreaming }: ResultPaneProps) {
       <div
         ref={contentRef}
         className="border rounded-lg p-6 bg-card lg:h-[600px] overflow-y-auto"
+        role="article"
+        aria-label="Resume analysis results"
       >
         {isStreaming && (
           <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">

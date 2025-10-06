@@ -9,16 +9,25 @@ import { Upload, FileText, X, RefreshCw } from "lucide-react";
 import { cn, formatFileSize } from "../lib/utils";
 import type { ParsedResume } from "../types";
 
+/**
+ * Props for the ResumeDropzone component
+ */
 interface ResumeDropzoneProps {
+  /** Callback when a file is selected */
   onFileSelect: (file: File) => void;
+  /** The currently parsed resume data, or null if none */
   parsedResume: ParsedResume | null;
+  /** Callback to clear the current resume */
   onClear: () => void;
 }
 
+/** Available tab types for the dropzone */
 type TabType = "upload" | "paste";
 
+/** Accepted file types for upload */
 const ACCEPTED_FILE_TYPES = ".pdf,.docx,.doc,.md,.txt";
-const MAX_FILE_SIZE = 1024 * 1024; // 1MB
+/** Maximum file size in bytes (1MB) */
+const MAX_FILE_SIZE = 1024 * 1024;
 
 /**
  * File upload and text input component with preview
@@ -120,7 +129,11 @@ export default function ResumeDropzone({
   return (
     <div className="border rounded-lg overflow-hidden">
       {/* Tabs */}
-      <div className="flex border-b">
+      <div
+        className="flex border-b"
+        role="tablist"
+        aria-label="Resume input method"
+      >
         <button
           onClick={() => setActiveTab("upload")}
           className={cn(
@@ -129,6 +142,9 @@ export default function ResumeDropzone({
               ? "bg-primary text-primary-foreground"
               : "bg-background hover:bg-muted"
           )}
+          role="tab"
+          aria-selected={activeTab === "upload"}
+          aria-controls="upload-panel"
         >
           <Upload className="inline-block mr-2 h-4 w-4" />
           Upload File
@@ -144,6 +160,9 @@ export default function ResumeDropzone({
               ? "bg-primary text-primary-foreground"
               : "bg-background hover:bg-muted"
           )}
+          role="tab"
+          aria-selected={activeTab === "paste"}
+          aria-controls="paste-panel"
         >
           <FileText className="inline-block mr-2 h-4 w-4" />
           Paste Text
@@ -156,7 +175,12 @@ export default function ResumeDropzone({
       {/* Content */}
       <div className="px-6 py-3">
         {activeTab === "upload" ? (
-          <div className="flex flex-col h-[300px]">
+          <div
+            className="flex flex-col h-[300px]"
+            role="tabpanel"
+            id="upload-panel"
+            aria-labelledby="upload-tab"
+          >
             {parsedResume && parsedResume.source === "file" ? (
               /* Show uploaded file info */
               <div className="flex flex-col flex-1 border-2 border-primary rounded-lg p-6 bg-primary/5">
@@ -254,7 +278,12 @@ export default function ResumeDropzone({
             )}
           </div>
         ) : (
-          <div className="h-[300px] flex flex-col">
+          <div
+            className="h-[300px] flex flex-col"
+            role="tabpanel"
+            id="paste-panel"
+            aria-labelledby="paste-tab"
+          >
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-muted-foreground">
                 {textValue.length} characters

@@ -414,17 +414,39 @@ cp pdf.worker.min.js public/
 
 Vite automatically copies `public/` contents to `dist/` during build.
 
-**Step 2: Verify**
+**Step 2: Configure worker path**
+
+In `src/lib/parsers/pdfParser.ts`:
+
+```typescript
+import * as pdfjs from "pdfjs-dist";
+
+// Configure worker path for client-side processing
+pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
+```
+
+**Step 3: Verify**
 
 ```bash
 npm run build
 ls dist/pdf.worker.min.js  # ✅ Should exist
 ```
 
-### Files Modified
+### File Structure
 
-- Created `public/` folder with `pdf.worker.min.js`
-- `docs/PDF_WORKER_FIX.md` - Detailed documentation
+```
+resume_doctor/
+├── public/
+│   └── pdf.worker.min.js          # Source file (copied to dist during build)
+├── dist/                           # Build output
+│   ├── assets/
+│   ├── index.html
+│   └── pdf.worker.min.js          # Worker file (available at runtime)
+└── src/
+    └── lib/
+        └── parsers/
+            └── pdfParser.ts        # Configures worker path
+```
 
 ### Technical Details
 
@@ -434,6 +456,55 @@ ls dist/pdf.worker.min.js  # ✅ Should exist
 - Not processed by Vite bundler
 - Referenced with absolute paths (`/pdf.worker.min.js`)
 
+Reference: [Vite Static Assets](https://vitejs.dev/guide/assets.html#the-public-directory)
+
+### Alternative: CDN Fallback
+
+If you want to use a CDN as a fallback (not recommended for production):
+
+```typescript
+// Option 1: CDN only
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
+// Option 2: Local with CDN fallback (more complex)
+try {
+  await fetch("/pdf.worker.min.js");
+  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+} catch {
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+}
+```
+
+### Common Issues
+
+**Issue: Worker file not found in dist/**
+
+Solution: Ensure `public/pdf.worker.min.js` exists before building
+
+```bash
+ls public/pdf.worker.min.js
+npm run build
+```
+
+**Issue: Worker version mismatch**
+
+Solution: Ensure worker version matches pdfjs-dist version
+
+```bash
+# Check installed version
+npm list pdfjs-dist
+
+# Download matching worker from:
+# https://github.com/mozilla/pdf.js/releases
+```
+
+**Issue: 404 error for worker in production**
+
+Solution: Check that hosting platform serves static files correctly
+
+- Vercel/Netlify: Should work automatically
+- Custom server: Ensure `/pdf.worker.min.js` is accessible
+
 ### Verification
 
 1. ✅ Build completed successfully
@@ -441,9 +512,23 @@ ls dist/pdf.worker.min.js  # ✅ Should exist
 3. ✅ PDF uploads work in production preview
 4. ✅ No console errors
 
+### Files Modified
+
+- Created `public/` folder with `pdf.worker.min.js`
+- `src/lib/parsers/pdfParser.ts` - Worker configuration
+
+### Prevention Strategy
+
+1. ✅ Keep `pdf.worker.min.js` in `public/` folder
+2. ✅ Add to version control
+3. ✅ Test production build before deploying
+4. ✅ Add to deployment checklist
+
 ### Related Documentation
 
-- [PDF_WORKER_FIX.md](./PDF_WORKER_FIX.md)
+- See: `docs/PDF_WORKER_FIX.md` (detailed guide)
+- [PDF.js Documentation](https://mozilla.github.io/pdf.js/)
+- [Vite Public Directory](https://vitejs.dev/guide/assets.html#the-public-directory)
 
 ---
 
@@ -457,25 +542,32 @@ ls dist/pdf.worker.min.js  # ✅ Should exist
 
 Analysis results sometimes appeared incomplete, cutting off mid-sentence even though the stream seemed to finish normally. No error messages indicated why.
 
-### Root Causes
+### Root Causes Identified
 
-1. **Insufficient token buffer**: `maxOutputTokens: 4096` was cutting it close for 1000-word responses
-2. **No finish reason checking**: Couldn't tell if response hit MAX_TOKENS, SAFETY filters, or completed normally
-3. **Lack of observability**: No logging to debug stream behavior
-4. **Silent failures**: Stream issues not properly caught or reported
+#### 1. Token Limit (Partially)
 
-### Solution
+**Original Setting**: `maxOutputTokens: 4096`
 
-**Increased Token Limit:**
+- Compact (500 words): ~650-800 tokens ✅ OK
+- Full (1000 words): ~1,300-1,500 tokens ✅ OK
+- But prompts + response could approach limit
 
-```typescript
-maxOutputTokens: 6144, // Increased from 4096
-```
+**Solution**: Increased to `maxOutputTokens: 6144`
 
-- Still well within free tier (8,192 max)
-- Provides buffer for 1000+ word responses
+- Provides more buffer for longer responses
+- Still well within free tier limits (up to 8,192 tokens)
+- Reduces risk of hitting MAX_TOKENS finish reason
 
-**Added Finish Reason Checks:**
+#### 2. Missing Finish Reason Checks
+
+**Problem**: No way to know WHY the stream ended
+
+- MAX_TOKENS: Hit token limit
+- SAFETY: Content filtered
+- RECITATION: Blocked due to duplication
+- STOP: Normal completion
+
+**Solution**: Added comprehensive finish reason checking
 
 ```typescript
 const finishReason = response.candidates?.[0]?.finishReason;
@@ -484,48 +576,292 @@ if (finishReason === "MAX_TOKENS") {
   console.warn("⚠️ Response hit MAX_TOKENS limit");
   // Add notice to output
 }
+```
 
+#### 3. Lack of Observability
+
+**Problem**: No logging to debug stream issues
+
+- Can't see how many chunks received
+- Don't know total token usage
+- No timing information
+
+**Solution**: Added detailed logging throughout stream
+
+```typescript
+console.log("🚀 Starting Gemini stream...");
+console.log(`📦 Chunk ${n}: ${text.length} chars`);
+console.log("✅ Stream complete:", { stats });
+```
+
+#### 4. Silent Stream Failures
+
+**Problem**: Stream might fail silently without proper error handling
+
+- Network timeouts not caught
+- Safety filters not reported
+- Async errors swallowed
+
+**Solution**: Enhanced error handling with specific messages
+
+```typescript
 if (finishReason === "SAFETY") {
   throw new Error("Response blocked by content safety filters...");
 }
 ```
 
-**Enhanced Logging:**
+### Changes Applied
+
+#### Updated `src/lib/gemini.ts`
+
+**Increased Token Limit:**
+
+```typescript
+generationConfig: {
+  temperature: 0.2,
+  topP: 0.9,
+  topK: 40,
+  maxOutputTokens: 6144, // Was: 4096
+  responseMimeType: "text/plain",
+}
+```
+
+**Added Detailed Logging:**
 
 ```typescript
 console.log("🚀 Starting Gemini stream...");
-console.log(`📦 Chunk ${n}: ${text.length} chars`);
+let totalChunks = 0;
+let totalText = "";
+
+for await (const chunk of result.stream) {
+  totalChunks++;
+  totalText += text;
+  console.log(`📦 Chunk ${totalChunks}: ${text.length} chars`);
+  // ...
+}
+```
+
+**Added Finish Reason Checks:**
+
+```typescript
+const finishReason = response.candidates?.[0]?.finishReason;
+const usageMetadata = response.usageMetadata;
+
 console.log("✅ Stream complete:", {
   totalChunks,
-  totalChars,
-  totalWords,
+  totalChars: totalText.length,
+  totalWords: totalText.split(/\s+/).length,
   finishReason,
-  promptTokens,
-  responseTokens,
-  totalTokens,
+  promptTokens: usageMetadata?.promptTokenCount,
+  responseTokens: usageMetadata?.candidatesTokenCount,
+  totalTokens: usageMetadata?.totalTokenCount,
 });
 ```
+
+**Added Safety Warnings:**
+
+```typescript
+if (finishReason === "MAX_TOKENS") {
+  yield {
+    text: "\n\n*[Note: Response may be incomplete due to length limits. Consider requesting a more compact analysis.]*",
+    isComplete: false,
+  };
+}
+
+if (finishReason === "SAFETY") {
+  throw new Error(
+    "Response blocked by content safety filters. Please try rephrasing your resume or job context."
+  );
+}
+```
+
+#### Updated `src/hooks/useSubmitAnalysis.ts`
+
+**Added Stream Progress Tracking:**
+
+```typescript
+console.log("� Starting analysis stream...");
+let chunkCount = 0;
+const startTime = Date.now();
+
+for await (const chunk of geminiService.streamAnalysis(...)) {
+  if (!chunk.isComplete) {
+    chunkCount++;
+    console.log(`� Chunk ${chunkCount}: +${chunk.text.length} chars`);
+  }
+}
+
+const duration = Date.now() - startTime;
+console.log("✅ Stream completed:", {
+  totalChunks: chunkCount,
+  totalChars: fullContent.length,
+  totalWords: fullContent.split(/\s+/).length,
+  duration: `${(duration / 1000).toFixed(2)}s`,
+});
+```
+
+### How to Debug Incomplete Responses
+
+#### 1. Open Browser Console
+
+Press F12 or Right-click → Inspect → Console
+
+#### 2. Submit an Analysis
+
+Watch for these log messages:
+
+**Stream Start:**
+
+```
+🚀 Starting Gemini stream...
+```
+
+**Each Chunk:**
+
+```
+📦 Chunk 1: 142 chars
+📦 Chunk 2: 156 chars
+📦 Chunk 3: 189 chars
+```
+
+**Stream Completion:**
+
+```
+✅ Stream complete: {
+  totalChunks: 12,
+  totalChars: 3456,
+  totalWords: 523,
+  finishReason: "STOP",
+  promptTokens: 892,
+  responseTokens: 1456,
+  totalTokens: 2348
+}
+```
+
+#### 3. Check Finish Reason
+
+**✅ STOP** - Normal completion, response is complete
+
+**⚠️ MAX_TOKENS** - Hit token limit, response cut off
+
+- Solution: Response includes notice
+- Consider: Request more compact analysis
+
+**❌ SAFETY** - Content filtered by safety settings
+
+- Solution: Error thrown with clear message
+- Action: Rephrase resume or job context
+
+**❌ RECITATION** - Blocked due to content recitation
+
+- Solution: Error thrown with clear message
+- Action: Use different content
+
+#### 4. Check Token Usage
+
+If `responseTokens` is close to `maxOutputTokens (6144)`:
+
+- Response is hitting the limit
+- Consider more compact prompts
+- Or reduce word count requirements
+
+### Token Limits Reference
+
+**Gemini 1.5 Pro (Free Tier):**
+
+- ✅ Max output tokens: **8,192**
+- ✅ Context window: **1,048,576 tokens**
+- ✅ Rate limit: **2 RPM** (requests per minute)
+
+**Our Configuration:**
+
+- Current: **6,144 tokens** (output)
+- Usage: ~2,000-3,500 tokens per request
+- Buffer: ~2,600-4,100 tokens remaining
+
+**Expected Token Usage:**
+
+```
+System prompt:        500-800 tokens
+Resume text:          400-1,200 tokens
+Job context:          100-300 tokens
+Response (500 words): 650-800 tokens
+Response (1000 words): 1,300-1,500 tokens
+─────────────────────────────────────
+Total (compact):      1,650-3,100 tokens
+Total (full):         2,300-3,800 tokens
+```
+
+### Expected Console Output
+
+**Successful Stream:**
+
+```
+🔄 Starting analysis stream...
+🚀 Starting Gemini stream...
+📦 Chunk 1: 142 chars
+📝 Chunk 1: +142 chars, total: 142 chars
+📦 Chunk 2: 156 chars
+📝 Chunk 2: +156 chars, total: 298 chars
+...
+✅ Stream complete: {
+  totalChunks: 12,
+  totalChars: 3456,
+  totalWords: 523,
+  finishReason: "STOP",
+  responseTokens: 1456,
+  totalTokens: 2348
+}
+✅ Stream completed: {
+  totalChunks: 12,
+  totalChars: 3456,
+  totalWords: 523,
+  duration: "4.23s"
+}
+```
+
+**Response Cut Off (MAX_TOKENS):**
+
+```
+⚠️ Response hit MAX_TOKENS limit - response may be incomplete
+[Note: Response may be incomplete due to length limits...]
+```
+
+**Safety Filter:**
+
+```
+⚠️ Response blocked by safety filters
+❌ Analysis error: Response blocked by content safety filters...
+```
+
+### Prevention Strategies
+
+1. **Monitor Token Usage**
+
+   - Check console logs for token counts
+   - Alert if approaching 6,000 tokens
+
+2. **Adjust Prompts**
+
+   - Keep system prompts concise
+   - Limit resume length to 2-3 pages
+   - Clear word count expectations
+
+3. **Handle Edge Cases**
+
+   - Very long resumes (>2000 words)
+   - Complex job descriptions
+   - Multiple special focus areas
+
+4. **User Feedback**
+   - Show token usage in UI (optional)
+   - Warn if resume is too long
+   - Suggest compact mode for long content
 
 ### Files Modified
 
 - `src/lib/gemini.ts` - Enhanced streaming with logging and checks
 - `src/hooks/useSubmitAnalysis.ts` - Added progress tracking
-
-### Files Created
-
-- `docs/GEMINI_STREAMING_FIX.md` - Complete debugging guide
-
-### Debugging Steps
-
-Open browser console (F12) and check:
-
-1. Stream start: `🚀 Starting Gemini stream...`
-2. Chunks received: `📦 Chunk 1: 142 chars`
-3. Completion log with finishReason
-4. Token usage statistics
-
-**Good finishReason**: `"STOP"` (normal completion)  
-**Bad finishReason**: `"MAX_TOKENS"` (cut off) or `"SAFETY"` (filtered)
 
 ### Verification
 
@@ -537,7 +873,10 @@ Open browser console (F12) and check:
 
 ### Related Documentation
 
-- [GEMINI_STREAMING_FIX.md](./GEMINI_STREAMING_FIX.md)
+- See: `docs/GEMINI_STREAMING_FIX.md` (comprehensive debugging guide)
+- [Gemini API Documentation](https://ai.google.dev/docs)
+- [Token Limits](https://ai.google.dev/gemini-api/docs/models/gemini#model-variations)
+- [Finish Reasons](https://ai.google.dev/gemini-api/docs/api-versions)
 
 ---
 
@@ -574,25 +913,91 @@ After each fix, verify:
 
 1. **Add automated tests** to catch these issues earlier:
 
-   - Unit tests for form validation logic
-   - Integration tests for API calls
+   - ✅ Unit tests for form validation logic (139 tests implemented)
+   - ✅ Integration tests for API calls (covered in component tests)
    - E2E tests for user workflows
 
 2. **Add error boundaries** for graceful failure handling:
 
-   - ✅ Already implemented in Phase F
+   - ✅ Already implemented in Phase F (ErrorBoundary component with 28 tests)
    - Add specific error boundaries for API calls
 
 3. **Improve error messages** for better UX:
 
-   - More descriptive validation errors
-   - User-friendly API error messages
-   - Recovery suggestions
+   - ✅ More descriptive validation errors (implemented in forms)
+   - ✅ User-friendly API error messages (Gemini streaming errors)
+   - ✅ Recovery suggestions (added to error messages)
 
 4. **Add monitoring** for production:
-   - Log API errors
-   - Track reCAPTCHA failures
+   - ✅ Log API errors (console logging for streams)
+   - ✅ Track reCAPTCHA failures (error handling in place)
    - Monitor performance metrics
+
+---
+
+## Detailed Documentation
+
+Each bug fix has comprehensive documentation available:
+
+### Issue #1 & #1b: Submit Button Validation
+
+- **Main**: This document (sections 1a & 1b)
+- **Details**: Individual fix documents (deprecated, merged here)
+
+### Issue #2: reCAPTCHA Invalid Site Key
+
+- **Main**: This document (section 2)
+- **Setup Guide**: `docs/RECAPTCHA_SETUP.md`
+
+### Issue #3: reCAPTCHA Dynamic Script Loading
+
+- **Main**: This document (section 3)
+- **Setup Guide**: `docs/RECAPTCHA_SETUP.md`
+
+### Issue #4: Gemini API System Instruction
+
+- **Main**: This document (section 4)
+- **Details**: Individual fix document (deprecated, merged here)
+
+### Issue #5: PDF Worker Not Found
+
+- **Main**: This document (section 5) - **COMPREHENSIVE**
+- **Standalone**: `docs/PDF_WORKER_FIX.md` (detailed troubleshooting guide)
+- **Includes**: File structure, alternatives, common issues, verification steps
+
+### Issue #6: Gemini Streaming Cut Off
+
+- **Main**: This document (section 6) - **COMPREHENSIVE**
+- **Standalone**: `docs/GEMINI_STREAMING_FIX.md` (debugging guide with console logs)
+- **Includes**: Token limits, finish reasons, observability, prevention strategies
+
+---
+
+## Related Documentation
+
+### Setup & Configuration
+
+- `RECAPTCHA_SETUP.md` - Complete reCAPTCHA v3 setup guide
+- `DEPLOYMENT.md` - Production deployment instructions
+- `UNIT_TEST_SETUP.md` - Testing infrastructure and 139 tests
+
+### Implementation Guides
+
+- `Implementation Plan - Base Layer.md` - Phase A-B foundation
+- `Implementation Plan - Core Functions.md` - Phase C-D features
+- `Implementation Plan - Analysis Flow.md` - Phase E analytics
+- `Implementation Plan - Authentication.md` - Phase G+ future features
+
+### Testing Documentation
+
+- `PROMPT_CONFIG_FORM_TESTS.md` - 26 form tests detailed
+- `src/components/__tests__/README.md` - All 139 tests overview
+- Component tests: ErrorBoundary (28), PromptConfigForm (26), ResultPane (27), ResumeDropzone (28), SubmitBar (30)
+
+### Production
+
+- `PRODUCTION_SUMMARY.md` - Live deployment summary
+- `Dev Document.md` - Original development plan
 
 ---
 
@@ -602,6 +1007,26 @@ After each fix, verify:
 - Most issues related to async initialization and API integration
 - Good documentation helped resolve issues quickly
 - Environment variable approach improved security and flexibility
+- Comprehensive testing suite (139 tests) prevents regressions
 
 **Last Updated**: October 5, 2025  
+**Total Lines**: ~950  
 **Next Review**: Before Phase G (Comprehensive Testing)
+
+---
+
+## Quick Reference
+
+**Most Common Issues:**
+
+1. reCAPTCHA setup → See `RECAPTCHA_SETUP.md`
+2. PDF uploads fail in production → See Issue #5 (public folder)
+3. Streaming cut off → See Issue #6 (check console logs)
+4. Form validation → See Issue #1 (useEffect dependencies)
+
+**For New Developers:**
+
+- Start with `README.md` in docs folder
+- Review this BUG_FIX_LOG for common pitfalls
+- Check `UNIT_TEST_SETUP.md` for test examples
+- See `DEPLOYMENT.md` for production setup
